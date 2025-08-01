@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../widgets/numeric_keypad.dart';
 import '../models/login_dto.dart';
 import '../services/auth_service.dart';
+import 'main_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -121,7 +122,12 @@ class _LoginPageState extends State<LoginPage> {
             backgroundColor: Colors.green,
           ),
         );
-        // TODO: 메인 페이지로 이동
+        // 메인 페이지로 이동
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => MainPage(loginResponse: response),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
