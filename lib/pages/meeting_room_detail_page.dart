@@ -5,6 +5,8 @@ import '../models/booking.dart';
 import '../models/login_dto.dart';
 import '../services/booking_service.dart';
 import '../services/socket_service.dart';
+import 'booking_page.dart';
+import '../widgets/booking_list.dart';
 
 class MeetingRoomDetailPage extends StatefulWidget {
   final MeetingRoom meetingRoom;
@@ -353,6 +355,9 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
   }
 
   Widget _buildMainContent() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 768;
+
     return Column(
       children: [
         // 상단: 회의실 정보 및 날짜/시간
@@ -363,16 +368,13 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
           child: Row(
             children: [
               // 왼쪽: 예약 상태 메시지
-              Expanded(flex: 2, child: _buildStatusSection()),
+              Expanded(flex: isMobile ? 1 : 2, child: _buildStatusSection()),
 
               // 오른쪽: 시간표
-              Expanded(flex: 1, child: _buildTimeSchedule()),
+              Expanded(flex: isMobile ? 2 : 3, child: _buildTimeSchedule()),
             ],
           ),
         ),
-
-        // 하단: 예약 버튼
-        _buildBookingButton(),
       ],
     );
   }
@@ -397,77 +399,85 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          // 회의실 정보
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A),
-                  borderRadius: BorderRadius.circular(12),
+          // 왼쪽: 회의실 정보
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.meeting_room,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.meeting_room,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.meetingRoom.name,
-                      style: TextStyle(
-                        fontSize: isMobile ? 24 : 28,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1E3A8A),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.meetingRoom.name,
+                        style: TextStyle(
+                          fontSize: isMobile ? 24 : 28,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1E3A8A),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${widget.meetingRoom.capacity}석',
-                      style: TextStyle(
-                        fontSize: isMobile ? 16 : 18,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 4),
+                      Text(
+                        '${widget.meetingRoom.capacity}석',
+                        style: TextStyle(
+                          fontSize: isMobile ? 16 : 18,
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
-          const SizedBox(height: 20),
-
-          // 날짜 및 시간
-          Row(
+          // 오른쪽: 날짜 및 시간
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Icon(Icons.calendar_today, size: 20, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              Text(
-                _getCurrentDateString(),
-                style: TextStyle(
-                  fontSize: isMobile ? 16 : 18,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 20, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    _getCurrentDateString(),
+                    style: TextStyle(
+                      fontSize: isMobile ? 16 : 18,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 24),
-              Icon(Icons.access_time, size: 20, color: Colors.grey[600]),
-              const SizedBox(width: 8),
-              Text(
-                _getCurrentTimeString(),
-                style: TextStyle(
-                  fontSize: isMobile ? 16 : 18,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500,
-                ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Icon(Icons.access_time, size: 20, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    _getCurrentTimeString(),
+                    style: TextStyle(
+                      fontSize: isMobile ? 16 : 18,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -597,12 +607,40 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
                     ),
                   )
                 else
-                  Text(
-                    '${currentMeeting.title} (${_formatTime(currentMeeting.startTime)} ~ ${_formatTime(currentMeeting.endTime)})',
-                    style: TextStyle(
-                      fontSize: isMobile ? 16 : 18,
-                      color: Colors.red[600],
-                      fontWeight: FontWeight.w500,
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          currentMeeting.title,
+                          style: TextStyle(
+                            fontSize: isMobile ? 16 : 18,
+                            color: Colors.red[700],
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatTime(currentMeeting.startTime)} ~ ${_formatTime(currentMeeting.endTime)}',
+                          style: TextStyle(
+                            fontSize: isMobile ? 14 : 16,
+                            color: Colors.red[600],
+                          ),
+                        ),
+                        Text(
+                          '${currentMeeting.userName} (${currentMeeting.employeeNumber})',
+                          style: TextStyle(
+                            fontSize: isMobile ? 14 : 16,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
               ],
@@ -655,13 +693,69 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
                     ),
                   )
                 else
-                  Text(
-                    '${upcomingMeetings.length}개의 예약이 있습니다',
-                    style: TextStyle(
-                      fontSize: isMobile ? 16 : 18,
-                      color: Colors.blue[600],
-                      fontWeight: FontWeight.w500,
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${upcomingMeetings.length}개의 예약이 있습니다',
+                        style: TextStyle(
+                          fontSize: isMobile ? 16 : 18,
+                          color: Colors.blue[600],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...upcomingMeetings
+                          .take(3)
+                          .map(
+                            (booking) => Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue[200]!),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    booking.title,
+                                    style: TextStyle(
+                                      fontSize: isMobile ? 14 : 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue[700],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${_formatTime(booking.startTime)} ~ ${_formatTime(booking.endTime)}',
+                                    style: TextStyle(
+                                      fontSize: isMobile ? 12 : 14,
+                                      color: Colors.blue[600],
+                                    ),
+                                  ),
+                                  Text(
+                                    '${booking.userName} (${booking.employeeNumber})',
+                                    style: TextStyle(
+                                      fontSize: isMobile ? 12 : 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      if (upcomingMeetings.length > 3)
+                        Text(
+                          '외 ${upcomingMeetings.length - 3}개 더...',
+                          style: TextStyle(
+                            fontSize: isMobile ? 12 : 14,
+                            color: Colors.grey[500],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                    ],
                   ),
               ],
             ),
@@ -675,6 +769,8 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 768;
     final currentHour = _currentTime.hour;
+    final currentMinute = _currentTime.minute;
+    final todayBookings = _getTodayBookings();
 
     return Container(
       margin: EdgeInsets.only(
@@ -705,7 +801,7 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
                 Icon(Icons.schedule, size: 20, color: Colors.blue[600]),
                 const SizedBox(width: 8),
                 Text(
-                  '시간표',
+                  '타임테이블',
                   style: TextStyle(
                     fontSize: isMobile ? 18 : 20,
                     fontWeight: FontWeight.bold,
@@ -718,7 +814,7 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
 
           const SizedBox(height: 12),
 
-          // 시간표 내용
+          // 타임테이블 내용
           Expanded(
             child: Container(
               width: double.infinity,
@@ -734,82 +830,258 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
                   ),
                 ],
               ),
-              child: ListView.builder(
-                padding: EdgeInsets.all(isMobile ? 8 : 12),
-                itemCount: 9, // 14:00 ~ 22:00 (9시간)
-                itemBuilder: (context, index) {
-                  final hour = 14 + index; // 14시부터 시작
-                  final timeString = '${hour.toString().padLeft(2, '0')}:00';
-                  final isCurrentHour = hour == currentHour;
-                  final isPastHour = hour < currentHour;
+              child: Stack(
+                children: [
+                  // 타임라인
+                  Column(
+                    children: List.generate(9, (index) {
+                      final hour = 14 + index; // 14:00 ~ 22:00
+                      final timeString =
+                          '${hour.toString().padLeft(2, '0')}:00';
+                      final isCurrentHour = hour == currentHour;
+                      final isPastHour = hour < currentHour;
 
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 2),
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 8 : 12,
-                      vertical: isMobile ? 6 : 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color:
-                          isCurrentHour
-                              ? Colors.red[100]
-                              : isPastHour
-                              ? Colors.grey[100]
-                              : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border:
-                          isCurrentHour
-                              ? Border.all(color: Colors.red, width: 2)
-                              : null,
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          timeString,
-                          style: TextStyle(
-                            fontSize: isMobile ? 14 : 16,
-                            fontWeight:
-                                isCurrentHour
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                            color:
-                                isCurrentHour
-                                    ? Colors.red[700]
-                                    : isPastHour
-                                    ? Colors.grey[500]
-                                    : Colors.black87,
-                          ),
-                        ),
-                        const Spacer(),
-                        if (isCurrentHour)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '현재',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                      // 해당 시간대의 예약 찾기
+                      final hourBookings =
+                          todayBookings.where((booking) {
+                            return booking.startTime.hour == hour;
+                          }).toList();
+
+                      return Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.grey[300]!,
+                                width: 1,
                               ),
                             ),
                           ),
-                      ],
+                          child: Row(
+                            children: [
+                              // 시간 표시
+                              Container(
+                                width: isMobile ? 50 : 70,
+                                padding: EdgeInsets.all(isMobile ? 4 : 8),
+                                child: Text(
+                                  timeString,
+                                  style: TextStyle(
+                                    fontSize: isMobile ? 11 : 14,
+                                    fontWeight:
+                                        isCurrentHour
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                    color:
+                                        isCurrentHour
+                                            ? Colors.red[700]
+                                            : Colors.grey[600],
+                                  ),
+                                ),
+                              ),
+                              // 예약 블록 영역
+                              Expanded(
+                                child: Container(
+                                  padding: EdgeInsets.all(isMobile ? 4 : 8),
+                                  child:
+                                      hourBookings.isEmpty
+                                          ? const SizedBox.shrink()
+                                          : SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            child: Row(
+                                              children:
+                                                  hourBookings
+                                                      .map(
+                                                        (booking) => Container(
+                                                          margin:
+                                                              const EdgeInsets.only(
+                                                                right: 8,
+                                                              ),
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                isMobile
+                                                                    ? 6
+                                                                    : 8,
+                                                              ),
+                                                          constraints:
+                                                              BoxConstraints(
+                                                                minWidth:
+                                                                    isMobile
+                                                                        ? 120
+                                                                        : 150,
+                                                                maxWidth:
+                                                                    isMobile
+                                                                        ? 200
+                                                                        : 250,
+                                                              ),
+                                                          decoration: BoxDecoration(
+                                                            color:
+                                                                Colors.blue[50],
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  6,
+                                                                ),
+                                                            border: Border.all(
+                                                              color:
+                                                                  Colors
+                                                                      .blue[200]!,
+                                                            ),
+                                                          ),
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            mainAxisSize:
+                                                                MainAxisSize
+                                                                    .min,
+                                                            children: [
+                                                              Text(
+                                                                booking.title,
+                                                                style: TextStyle(
+                                                                  fontSize:
+                                                                      isMobile
+                                                                          ? 10
+                                                                          : 12,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  color:
+                                                                      Colors
+                                                                          .blue[700],
+                                                                ),
+                                                                maxLines: 1,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                              const SizedBox(
+                                                                height: 2,
+                                                              ),
+                                                              Text(
+                                                                '${_formatTime(booking.startTime)} ~ ${_formatTime(booking.endTime)}',
+                                                                style: TextStyle(
+                                                                  fontSize:
+                                                                      isMobile
+                                                                          ? 8
+                                                                          : 10,
+                                                                  color:
+                                                                      Colors
+                                                                          .blue[600],
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                '${booking.userName}',
+                                                                style: TextStyle(
+                                                                  fontSize:
+                                                                      isMobile
+                                                                          ? 8
+                                                                          : 10,
+                                                                  color:
+                                                                      Colors
+                                                                          .grey[600],
+                                                                ),
+                                                                maxLines: 1,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      )
+                                                      .toList(),
+                                            ),
+                                          ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  // 실시간 현재 시간 선
+                  Positioned(
+                    left: isMobile ? 50 : 70, // 시간 표시 영역 제외
+                    right: 0,
+                    top: _calculateCurrentTimePosition(
+                      currentHour,
+                      currentMinute,
                     ),
-                  );
-                },
+                    child: Container(
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.5),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 예약하기 버튼
+          Container(
+            margin: const EdgeInsets.only(top: 16),
+            child: ElevatedButton(
+              onPressed: () async {
+                final result = await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder:
+                        (context) => BookingPage(
+                          meetingRoom: widget.meetingRoom,
+                          loginResponse: widget.loginResponse,
+                        ),
+                  ),
+                );
+
+                if (result == true) {
+                  _loadBookings();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(vertical: isMobile ? 16 : 20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 4,
+              ),
+              child: Text(
+                '예약하기',
+                style: TextStyle(
+                  fontSize: isMobile ? 18 : 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  double _calculateCurrentTimePosition(int hour, int minute) {
+    // 14:00 ~ 22:00 (9시간) 기준으로 위치 계산
+    final startHour = 14;
+    final totalHours = 9;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.6; // 화면 높이의 60%를 최대 높이로 설정
+
+    if (hour < startHour) return 0;
+    if (hour >= startHour + totalHours) return maxHeight;
+
+    final hourPosition = (hour - startHour) * (maxHeight / totalHours);
+    final minutePosition = (minute / 60) * (maxHeight / totalHours);
+
+    return hourPosition + minutePosition;
   }
 
   Widget _buildBookingButton() {
@@ -820,17 +1092,25 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
       width: double.infinity,
       margin: EdgeInsets.all(isMobile ? 16 : 24),
       child: ElevatedButton(
-        onPressed: () {
-          // 예약 페이지로 이동하는 로직
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('예약 기능은 준비 중입니다.'),
-              backgroundColor: Colors.orange,
+        onPressed: () async {
+          // 예약 페이지로 이동
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder:
+                  (context) => BookingPage(
+                    meetingRoom: widget.meetingRoom,
+                    loginResponse: widget.loginResponse,
+                  ),
             ),
           );
+
+          // 예약이 성공적으로 생성되었으면 예약 목록을 새로고침
+          if (result == true) {
+            _loadBookings();
+          }
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red,
+          backgroundColor: const Color(0xFF1E3A8A),
           foregroundColor: Colors.white,
           padding: EdgeInsets.symmetric(vertical: isMobile ? 16 : 20),
           shape: RoundedRectangleBorder(

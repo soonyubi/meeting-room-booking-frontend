@@ -28,6 +28,43 @@ class Booking {
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
+    // date와 startTime/endTime을 조합하여 DateTime 생성
+    DateTime? startTime;
+    DateTime? endTime;
+
+    if (json['date'] != null) {
+      final dateStr = json['date'] as String;
+      final date = DateTime.parse(dateStr);
+
+      if (json['startTime'] != null) {
+        final startTimeStr = json['startTime'] as String;
+        final timeParts = startTimeStr.split(':');
+        if (timeParts.length == 2) {
+          startTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            int.parse(timeParts[0]),
+            int.parse(timeParts[1]),
+          );
+        }
+      }
+
+      if (json['endTime'] != null) {
+        final endTimeStr = json['endTime'] as String;
+        final timeParts = endTimeStr.split(':');
+        if (timeParts.length == 2) {
+          endTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            int.parse(timeParts[0]),
+            int.parse(timeParts[1]),
+          );
+        }
+      }
+    }
+
     return Booking(
       id: json['id'] ?? 0,
       meetingRoomId: json['meetingRoomId'] ?? 0,
@@ -35,12 +72,8 @@ class Booking {
       userId: json['userId'] ?? 0,
       userName: json['userName'] ?? '',
       employeeNumber: json['employeeNumber'] ?? '',
-      startTime: DateTime.parse(
-        json['startTime'] ?? DateTime.now().toIso8601String(),
-      ),
-      endTime: DateTime.parse(
-        json['endTime'] ?? DateTime.now().toIso8601String(),
-      ),
+      startTime: startTime ?? DateTime.now(),
+      endTime: endTime ?? DateTime.now(),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       status: json['status'] ?? 'pending',
@@ -70,26 +103,26 @@ class Booking {
 
 class CreateBookingDto {
   final int meetingRoomId;
-  final DateTime startTime;
-  final DateTime endTime;
+  final String date;
+  final String startTime;
+  final String endTime;
   final String title;
-  final String description;
 
   CreateBookingDto({
     required this.meetingRoomId,
+    required this.date,
     required this.startTime,
     required this.endTime,
     required this.title,
-    required this.description,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'meetingRoomId': meetingRoomId,
-      'startTime': startTime.toIso8601String(),
-      'endTime': endTime.toIso8601String(),
+      'date': date,
+      'startTime': startTime,
+      'endTime': endTime,
       'title': title,
-      'description': description,
     };
   }
 }
