@@ -151,9 +151,14 @@ class SocketService {
         print('Booking created: $data');
         if (data is Map<String, dynamic>) {
           try {
-            final booking = Booking.fromJson(data);
-            if (!_bookingCreatedController.isClosed) {
-              _bookingCreatedController.add(booking);
+            // 백엔드에서 {booking: {...}, message: "..."} 형태로 보내므로
+            // booking 필드를 추출
+            final bookingData = data['booking'] as Map<String, dynamic>?;
+            if (bookingData != null) {
+              final booking = Booking.fromJson(bookingData);
+              if (!_bookingCreatedController.isClosed) {
+                _bookingCreatedController.add(booking);
+              }
             }
           } catch (e) {
             print('Error parsing booking created: $e');
@@ -166,9 +171,14 @@ class SocketService {
         print('Booking cancelled: $data');
         if (data is Map<String, dynamic>) {
           try {
-            final booking = Booking.fromJson(data);
-            if (!_bookingCancelledController.isClosed) {
-              _bookingCancelledController.add(booking);
+            // 백엔드에서 {booking: {...}, message: "..."} 형태로 보내므로
+            // booking 필드를 추출
+            final bookingData = data['booking'] as Map<String, dynamic>?;
+            if (bookingData != null) {
+              final booking = Booking.fromJson(bookingData);
+              if (!_bookingCancelledController.isClosed) {
+                _bookingCancelledController.add(booking);
+              }
             }
           } catch (e) {
             print('Error parsing booking cancelled: $e');

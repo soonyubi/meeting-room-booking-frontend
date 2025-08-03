@@ -85,7 +85,7 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
         });
 
         if (isConnected) {
-          print('Socket connected, joining room...');
+          print('Socket connected, joining room: ${widget.meetingRoom.id}');
           _socketService.joinRoom(widget.meetingRoom.id.toString());
         } else {
           print('Socket disconnected');
@@ -98,11 +98,17 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
       booking,
     ) {
       if (mounted && booking.meetingRoomId == widget.meetingRoom.id) {
+        print('Received booking created event: ${booking.title}');
         setState(() {
-          _bookings.add(booking);
-          _bookings.sort((a, b) => a.startTime.compareTo(b.startTime));
+          // 중복 체크
+          final existingIndex = _bookings.indexWhere((b) => b.id == booking.id);
+          if (existingIndex == -1) {
+            _bookings.add(booking);
+            _bookings.sort((a, b) => a.startTime.compareTo(b.startTime));
+            print('Added new booking: ${booking.title}');
+          }
         });
-        _showNotification('새로운 예약이 생성되었습니다.');
+        _showNotification('새로운 예약이 생성되었습니다: ${booking.title}');
       }
     });
 
@@ -110,10 +116,12 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
       booking,
     ) {
       if (mounted && booking.meetingRoomId == widget.meetingRoom.id) {
+        print('Received booking cancelled event: ${booking.title}');
         setState(() {
           _bookings.removeWhere((b) => b.id == booking.id);
+          print('Removed booking: ${booking.title}');
         });
-        _showNotification('예약이 취소되었습니다.');
+        _showNotification('예약이 취소되었습니다: ${booking.title}');
       }
     });
 
@@ -121,14 +129,16 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
       booking,
     ) {
       if (mounted && booking.meetingRoomId == widget.meetingRoom.id) {
+        print('Received booking update event: ${booking.title}');
         setState(() {
           final index = _bookings.indexWhere((b) => b.id == booking.id);
           if (index != -1) {
             _bookings[index] = booking;
             _bookings.sort((a, b) => a.startTime.compareTo(b.startTime));
+            print('Updated booking: ${booking.title}');
           }
         });
-        _showNotification('예약이 업데이트되었습니다.');
+        _showNotification('예약이 업데이트되었습니다: ${booking.title}');
       }
     });
   }
