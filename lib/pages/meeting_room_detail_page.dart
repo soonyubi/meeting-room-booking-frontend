@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/meeting_room.dart';
 import '../models/booking.dart';
@@ -25,35 +26,76 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
   String? _errorMessage;
   late SocketService _socketService;
   DateTime _currentTime = DateTime.now();
+  bool _isSocketConnected = false;
+
+  // 타이머와 스트림 구독 관리
+  Timer? _timeUpdateTimer;
+  late StreamSubscription<bool> _connectionStatusSubscription;
+  late StreamSubscription<Booking> _bookingCreatedSubscription;
+  late StreamSubscription<Booking> _bookingCancelledSubscription;
+  late StreamSubscription<Booking> _bookingUpdatesSubscription;
 
   @override
   void initState() {
     super.initState();
-    _socketService = SocketService();
+    _socketService = SocketService(); // 싱글톤 인스턴스 가져오기
     _loadBookings();
     _setupSocket();
     _startTimer();
   }
 
   void _startTimer() {
+    // 기존 타이머가 있다면 취소
+    _timeUpdateTimer?.cancel();
+
     // 1분마다 현재 시간 업데이트
-    Future.delayed(const Duration(minutes: 1), () {
+    _timeUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (mounted) {
         setState(() {
           _currentTime = DateTime.now();
         });
-        _startTimer();
+      } else {
+        // 위젯이 dispose되었으면 타이머 취소
+        timer.cancel();
       }
     });
   }
 
   void _setupSocket() {
+    // 이전 방에서 나가기 (다른 페이지에서 사용하던 방이 있을 수 있음)
+    final currentRoomId = _socketService.currentRoomId;
+    if (currentRoomId != null &&
+        currentRoomId != widget.meetingRoom.id.toString()) {
+      _socketService.leaveRoom(currentRoomId);
+      print('Left previous room: $currentRoomId');
+    }
+
+    // 소켓 연결
     _socketService.connect();
-    _socketService.joinRoom(widget.meetingRoom.id.toString());
+
+    // 연결 상태 리스너
+    _connectionStatusSubscription = _socketService.connectionStatus.listen((
+      isConnected,
+    ) {
+      if (mounted) {
+        setState(() {
+          _isSocketConnected = isConnected;
+        });
+
+        if (isConnected) {
+          print('Socket connected, joining room...');
+          _socketService.joinRoom(widget.meetingRoom.id.toString());
+        } else {
+          print('Socket disconnected');
+        }
+      }
+    });
 
     // 실시간 업데이트 리스너
-    _socketService.bookingCreated.listen((booking) {
-      if (booking.meetingRoomId == widget.meetingRoom.id) {
+    _bookingCreatedSubscription = _socketService.bookingCreated.listen((
+      booking,
+    ) {
+      if (mounted && booking.meetingRoomId == widget.meetingRoom.id) {
         setState(() {
           _bookings.add(booking);
           _bookings.sort((a, b) => a.startTime.compareTo(b.startTime));
@@ -62,8 +104,10 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
       }
     });
 
-    _socketService.bookingCancelled.listen((booking) {
-      if (booking.meetingRoomId == widget.meetingRoom.id) {
+    _bookingCancelledSubscription = _socketService.bookingCancelled.listen((
+      booking,
+    ) {
+      if (mounted && booking.meetingRoomId == widget.meetingRoom.id) {
         setState(() {
           _bookings.removeWhere((b) => b.id == booking.id);
         });
@@ -71,8 +115,10 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
       }
     });
 
-    _socketService.bookingUpdates.listen((booking) {
-      if (booking.meetingRoomId == widget.meetingRoom.id) {
+    _bookingUpdatesSubscription = _socketService.bookingUpdates.listen((
+      booking,
+    ) {
+      if (mounted && booking.meetingRoomId == widget.meetingRoom.id) {
         setState(() {
           final index = _bookings.indexWhere((b) => b.id == booking.id);
           if (index != -1) {
@@ -167,8 +213,35 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
 
   @override
   void dispose() {
-    _socketService.leaveRoom(widget.meetingRoom.id.toString());
-    _socketService.disconnect();
+    print('Disposing MeetingRoomDetailPage...');
+
+    // 타이머 취소
+    try {
+      _timeUpdateTimer?.cancel();
+      print('Timer cancelled successfully');
+    } catch (e) {
+      print('Error cancelling timer: $e');
+    }
+
+    // 스트림 구독 취소
+    try {
+      _connectionStatusSubscription.cancel();
+      _bookingCreatedSubscription.cancel();
+      _bookingCancelledSubscription.cancel();
+      _bookingUpdatesSubscription.cancel();
+      print('Stream subscriptions cancelled successfully');
+    } catch (e) {
+      print('Error cancelling stream subscriptions: $e');
+    }
+
+    // 현재 방에서 나가기 (싱글톤이므로 dispose하지 않음)
+    try {
+      _socketService.leaveRoom(widget.meetingRoom.id.toString());
+      print('Left room successfully');
+    } catch (e) {
+      print('Error leaving room: $e');
+    }
+
     super.dispose();
   }
 
@@ -195,6 +268,28 @@ class _MeetingRoomDetailPageState extends State<MeetingRoomDetailPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
+          // 소켓 연결 상태 표시
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isSocketConnected ? Colors.green : Colors.red,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  _isSocketConnected ? '실시간' : '오프라인',
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _loadBookings,

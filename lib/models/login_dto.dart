@@ -1,18 +1,14 @@
 class LoginDto {
   final String employeeNumber;
-  final String password;
 
-  LoginDto({required this.employeeNumber, required this.password});
+  LoginDto({required this.employeeNumber});
 
   Map<String, dynamic> toJson() {
-    return {'employeeNumber': employeeNumber, 'password': password};
+    return {'employeeNumber': employeeNumber};
   }
 
   factory LoginDto.fromJson(Map<String, dynamic> json) {
-    return LoginDto(
-      employeeNumber: json['employeeNumber'] ?? '',
-      password: json['password'] ?? '',
-    );
+    return LoginDto(employeeNumber: json['employeeNumber'] ?? '');
   }
 }
 
